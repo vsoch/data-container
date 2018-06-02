@@ -11,7 +11,7 @@ Bootstrap: docker
 
 %apphelp unmount
     Unmount a squashfs file system
-        singularity run --app unmount dinosaur-data /tmp/data
+        singularity run --app unmount --bind local.sqsh:/scif/data.sqsh dinosaur-data
 
 # Mount a squashfs filesystem
 
@@ -23,7 +23,7 @@ Bootstrap: docker
 
 %apprun mount
     # mount file.sqsh /tmp/dest
-    exec mkdir -p "${2}" && squashfuse  "${1}" "${2}"
+    exec squashfuse /opt/data.sqsh /tmp/data
 
 %apphelp create
     Create a squashfs file system from a folder
@@ -47,4 +47,14 @@ Bootstrap: docker
     ./configure --with-xz=/usr/lib/ --prefix=/usr/local
     make
     make install
+
+    echo "user_allow_other" >> /etc/fuse.conf
+    chown root /bin/fusermount
+    chmod u+s /bin/fusermount
+
+    echo "/scif/data.sqsh  /scif/data       squashfs        ro,user,noauto,unhide,loop" >> /etc/fstab
+
     ldconfig
+    mkdir -p /scif/data
+    chmod --recursive ugo+rw /scif/data
+    mount -a
